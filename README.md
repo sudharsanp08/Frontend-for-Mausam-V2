@@ -5,29 +5,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IMD Mausam v2 — India Meteorological Department</title>
+  
+  <!-- Leaflet CSS for Interactive India Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     :root {
-      /* Official IMD Mausam Color Theme */
-      --imd-navy: #0b2545;
+      --imd-navy: #082545;
       --imd-blue: #134074;
-      --imd-accent: #0077b6;
+      --imd-cyan: #0077b6;
       --imd-gold: #ffb703;
-      --imd-bg: #eef4f8;
+      --imd-bg: #edf2f7;
       --card-bg: #ffffff;
       
       --text-main: #0b132b;
-      --text-muted: #5c6b73;
-      --border-color: #d0dbdf;
+      --text-muted: #4a5568;
+      --border-color: #cbd5e1;
       
-      /* Invariant Warning & Severity Colors */
       --alert-red: #d90429;
-      --alert-red-bg: #ffccd5;
-      --alert-orange: #fb8500;
+      --alert-red-bg: #fee2e2;
+      --alert-orange: #f59e0b;
       
-      /* Persona Accent Indicators */
       --badge-health: #e63946;
-      --badge-farmer: #2a9d8f;
-      --badge-commuter: #0077b6;
+      --badge-farmer: #16a34a;
+      --badge-commuter: #0284c7;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,16 +40,16 @@
       padding-bottom: 3rem;
     }
 
-    /* Official IMD Top App Bar */
-    .imd-app-header {
+    /* Official IMD App Header */
+    .imd-header {
       background: linear-gradient(135deg, var(--imd-navy) 0%, var(--imd-blue) 100%);
       color: #ffffff;
-      padding: 0.9rem 1.2rem;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+      padding: 0.85rem 1.25rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    .header-content {
-      max-width: 900px;
+    .header-inner {
+      max-width: 980px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
@@ -57,13 +58,13 @@
       gap: 0.75rem;
     }
 
-    .brand-cluster {
+    .brand-section {
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
 
-    .emblem-circle {
+    .emblem-badge {
       width: 44px;
       height: 44px;
       background: #ffffff;
@@ -71,16 +72,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       border: 2px solid var(--imd-gold);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
-    .brand-titles h1 {
+    .brand-section h1 {
       font-size: 1.25rem;
       font-weight: 800;
       letter-spacing: 0.5px;
-      text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -92,11 +91,10 @@
       font-size: 0.65rem;
       font-weight: 800;
       padding: 2px 7px;
-      border-radius: 12px;
-      letter-spacing: 0.5px;
+      border-radius: 10px;
     }
 
-    .brand-titles p {
+    .brand-section p {
       font-size: 0.75rem;
       color: #cbd5e1;
     }
@@ -104,11 +102,10 @@
     .lang-switcher select {
       background: rgba(255, 255, 255, 0.15);
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.35);
       padding: 0.35rem 0.65rem;
       border-radius: 6px;
-      font-size: 0.82rem;
-      outline: none;
+      font-size: 0.85rem;
       cursor: pointer;
     }
 
@@ -117,24 +114,23 @@
       color: #ffffff;
     }
 
-    /* Main Container */
-    .app-viewport {
-      max-width: 900px;
+    .main-viewport {
+      max-width: 980px;
       margin: 1.25rem auto 0;
       padding: 0 1rem;
     }
 
-    /* Updated Station Search Bar */
+    /* Search & Location Bar */
     .search-strip {
       background: var(--card-bg);
       border-radius: 30px;
-      padding: 0.35rem 0.5rem 0.35rem 1.2rem;
+      padding: 0.35rem 0.6rem 0.35rem 1.2rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       border: 1px solid var(--border-color);
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
     }
 
     .search-strip input {
@@ -162,7 +158,148 @@
       background: var(--imd-navy);
     }
 
-    /* Persona Segmented Bar (The v2 Modernization Layer) */
+    /* IMD India Map Section */
+    .map-card-wrapper {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+
+    .map-header-tabs {
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .map-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--imd-navy);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-transform: uppercase;
+    }
+
+    .map-layer-toggles {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .map-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .map-btn.active {
+      background: var(--imd-blue);
+      color: #ffffff;
+      border-color: var(--imd-blue);
+    }
+
+    #india-map {
+      height: 380px;
+      width: 100%;
+      z-index: 1;
+    }
+
+    /* Permanent Severe Alert Banner */
+    .alert-banner-box {
+      background: var(--alert-red-bg);
+      border-left: 6px solid var(--alert-red);
+      color: var(--alert-red);
+      padding: 0.9rem 1.1rem;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 2px 6px rgba(217, 4, 41, 0.15);
+    }
+
+    .alert-banner-box h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* IMD Current Weather Overview Card */
+    .imd-overview-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+    }
+
+    .station-details h2 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--imd-navy);
+    }
+
+    .station-details p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .station-badge {
+      display: inline-block;
+      margin-top: 0.4rem;
+      background: #e0f2fe;
+      color: var(--imd-cyan);
+      padding: 0.2rem 0.65rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .temp-quadrant {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .temp-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--imd-navy);
+      line-height: 1;
+    }
+
+    .telemetry-mini-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-left: 2px solid var(--border-color);
+      padding-left: 0.75rem;
+    }
+
+    /* v2 Persona Bar */
     .persona-bar-card {
       background: var(--card-bg);
       border-radius: 12px;
@@ -177,20 +314,19 @@
       gap: 0.75rem;
     }
 
-    .persona-label-group {
+    .persona-title-col {
       display: flex;
       flex-direction: column;
     }
 
-    .persona-label-group span:first-child {
-      font-size: 0.75rem;
+    .persona-title-col span:first-child {
+      font-size: 0.7rem;
       text-transform: uppercase;
       font-weight: 800;
       color: var(--text-muted);
-      letter-spacing: 0.5px;
     }
 
-    .persona-label-group span:last-child {
+    .persona-title-col span:last-child {
       font-size: 0.85rem;
       font-weight: 700;
       color: var(--imd-blue);
@@ -206,7 +342,7 @@
       background: var(--imd-bg);
       border: 1px solid var(--border-color);
       color: var(--text-muted);
-      padding: 0.45rem 0.85rem;
+      padding: 0.4rem 0.85rem;
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 700;
@@ -235,105 +371,7 @@
       border-color: var(--badge-commuter);
     }
 
-    /* Permanent Severe Alert Invariant (IMD Red/Orange Alert) */
-    .imd-alert-strip {
-      background: var(--alert-red-bg);
-      border-left: 6px solid var(--alert-red);
-      color: var(--alert-red);
-      padding: 0.9rem 1.1rem;
-      border-radius: 8px;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 2px 6px rgba(217, 4, 41, 0.15);
-    }
-
-    .imd-alert-strip h3 {
-      font-size: 1rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      margin-bottom: 0.2rem;
-    }
-
-    .imd-alert-strip p {
-      font-size: 0.85rem;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    /* Existing Mausam App Signature: Weather Hero Summary Card */
-    .imd-hero-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f1f7fa 100%);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .hero-station-meta h2 {
-      font-size: 1.45rem;
-      font-weight: 800;
-      color: var(--imd-navy);
-    }
-
-    .hero-station-meta p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-
-    .hero-nowcast-pill {
-      display: inline-block;
-      margin-top: 0.5rem;
-      background: #e0f2fe;
-      color: var(--imd-accent);
-      padding: 0.2rem 0.65rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-
-    .hero-temp-display {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .hero-temp-ring {
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--imd-navy);
-      line-height: 1;
-    }
-
-    .hero-submetrics {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-left: 2px solid var(--border-color);
-      padding-left: 0.75rem;
-    }
-
-    /* Section Label */
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.75px;
-      color: var(--text-muted);
-      margin: 0.5rem 0 0.75rem 0.25rem;
-    }
-
-    /* Ranked Dynamic Widgets Stack */
+    /* Ranked Widgets Deck */
     .adaptive-deck {
       display: flex;
       flex-direction: column;
@@ -346,11 +384,10 @@
       border-radius: 12px;
       padding: 1.1rem 1.25rem;
       box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .deck-card.top-priority {
-      border-left: 6px solid var(--imd-accent);
+      border-left: 6px solid var(--imd-cyan);
       box-shadow: 0 4px 14px rgba(0, 119, 182, 0.12);
     }
 
@@ -361,7 +398,7 @@
       margin-bottom: 0.85rem;
     }
 
-    .card-title-group h4 {
+    .deck-card-header h4 {
       font-size: 1.05rem;
       font-weight: 800;
       color: var(--imd-navy);
@@ -380,7 +417,7 @@
 
     .top-priority .rank-tag {
       background: #e0f2fe;
-      color: var(--imd-accent);
+      color: var(--imd-cyan);
       border-color: #bae6fd;
     }
 
@@ -403,7 +440,6 @@
       font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.25px;
     }
 
     .meas-val {
@@ -421,7 +457,6 @@
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      font-weight: 500;
     }
 
     .state-message {
@@ -443,12 +478,12 @@
 </head>
 <body>
 
-  <!-- Official IMD Top Banner -->
-  <header class="imd-app-header">
-    <div class="header-content">
-      <div class="brand-cluster">
-        <div class="emblem-circle" title="Government of India Emblem">🇮🇳</div>
-        <div class="brand-titles">
+  <!-- Official IMD App Bar -->
+  <header class="imd-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <div class="emblem-badge">🇮🇳</div>
+        <div>
           <h1>
             <span>मौसम MAUSAM</span>
             <span class="v2-pill">v2.0 ADAPTIVE</span>
@@ -467,9 +502,9 @@
     </div>
   </header>
 
-  <div class="app-viewport">
+  <div class="main-viewport">
 
-    <!-- Search Station Bar -->
+    <!-- Search Bar -->
     <div class="search-strip">
       <span>🔍</span>
       <input 
@@ -482,9 +517,45 @@
       <button id="btn-fetch" onclick="executeUpdate()">GO</button>
     </div>
 
-    <!-- Segmented Persona Selector (The Smart v2 Module) -->
+    <!-- IMD Interactive India Map Section -->
+    <section class="map-card-wrapper">
+      <div class="map-header-tabs">
+        <div class="map-title">
+          <span>📡</span>
+          <span id="txt-map-title">Interactive India Weather Map</span>
+        </div>
+        <div class="map-layer-toggles">
+          <button class="map-btn active" id="btn-layer-base" onclick="setMapLayer('base')">Standard Map</button>
+          <button class="map-btn" id="btn-layer-radar" onclick="setMapLayer('radar')">Radar / Clouds</button>
+          <button class="map-btn" id="btn-layer-warning" onclick="setMapLayer('warning')">IMD Alert Zones</button>
+        </div>
+      </div>
+      <div id="india-map"></div>
+    </section>
+
+    <!-- Invariant Emergency Alert Layer -->
+    <div id="severe-alert-anchor" aria-live="assertive"></div>
+
+    <!-- Current Observation Overview -->
+    <section class="imd-overview-card" id="overview-card" style="display: none;">
+      <div class="station-details">
+        <h2 id="overview-city-name">--</h2>
+        <p id="overview-state-name">India</p>
+        <span class="station-badge">Live Station Telemetry</span>
+      </div>
+      <div class="temp-quadrant">
+        <div class="temp-large" id="overview-temp">--°</div>
+        <div class="telemetry-mini-list">
+          <span id="overview-humidity">Humidity: --%</span>
+          <span id="overview-uv">UV Index: --</span>
+          <span id="overview-rain">Rain Probability: --%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- v2 Persona Intelligence Bar -->
     <div class="persona-bar-card">
-      <div class="persona-label-group">
+      <div class="persona-title-col">
         <span id="txt-viewing-mode">HOMEPAGE PROFILE</span>
         <span id="txt-active-mode-name">Health & Environment</span>
       </div>
@@ -502,47 +573,51 @@
       </div>
     </div>
 
-    <!-- Invariant Severe Warning Strip (Pinned to Top) -->
-    <div id="severe-alert-anchor" aria-live="assertive"></div>
-
-    <!-- Signature IMD Weather Hero Overview -->
-    <div class="imd-hero-card" id="hero-card" style="display: none;">
-      <div class="hero-station-meta">
-        <h2 id="hero-city-name">--</h2>
-        <p id="hero-state-name">India</p>
-        <span class="hero-nowcast-pill" id="hero-nowcast-summary">Station Telemetry Active</span>
-      </div>
-      <div class="hero-temp-display">
-        <div class="hero-temp-ring" id="hero-temp-val">--°</div>
-        <div class="hero-submetrics">
-          <span id="hero-humidity">Humidity: --%</span>
-          <span id="hero-uv">UV Index: --</span>
-          <span id="hero-rain">Rain Risk: --%</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Re-Ranked Persona Widgets Section -->
-    <div class="section-label" id="txt-widgets-heading">Personalized Priority Layout</div>
+    <!-- Dynamic Ranked Widgets Deck -->
     <main id="deck-container" class="adaptive-deck"></main>
 
   </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
     const BACKEND_URL = "http://127.0.0.1:8000";
     let activePersona = "health";
     let activeLang = "en";
+    let leafletMap = null;
+    let currentMarker = null;
+    let radarOverlayLayer = null;
+
+    // Standard coordinates for Indian regional centers
+    const INDIAN_COORDS = {
+      "Chennai": [13.0827, 80.2707],
+      "New Delhi": [28.6139, 77.2090],
+      "Mumbai": [19.0760, 72.8777],
+      "Kolkata": [22.5726, 88.3639],
+      "Bengaluru": [12.9716, 77.5946],
+      "Pune": [18.5204, 73.8567],
+      "Puri": [19.8135, 85.8312],
+      "Shimla": [31.1048, 77.1734],
+      "Hyderabad": [17.3850, 78.4867],
+      "Ahmedabad": [23.0225, 72.5714],
+      "Jaipur": [26.9124, 75.7873],
+      "Guwahati": [26.1445, 91.7362]
+    };
 
     const i18nDict = {
       en: {
         subhead: "India Meteorological Department | Ministry of Earth Sciences",
         searchPlaceholder: "Search District / Station (e.g. Chennai, Pune, Shimla, Puri)...",
         goBtn: "GO",
+        mapTitle: "Interactive India Weather Map",
+        layerBase: "Standard Map",
+        layerRadar: "Radar / Clouds",
+        layerWarning: "IMD Alert Zones",
         viewingMode: "HOMEPAGE PROFILE",
         healthBtn: "Health (AQI)",
         farmerBtn: "Agromet (Farmer)",
         commuterBtn: "Commuter",
-        widgetsHeading: "Personalized Priority Layout",
         loading: "Fetching official IMD & CAAQMS telemetry...",
         topPriority: "PRIORITY #1 (ACTIVE INTENT)",
         rankPrefix: "RANK #",
@@ -552,11 +627,14 @@
         subhead: "भारत मौसम विज्ञान विभाग | पृथ्वी विज्ञान मंत्रालय",
         searchPlaceholder: "ज़िला या मौसम केंद्र खोजें (उदा. चेन्नई, पुणे, शिमला, पुरी)...",
         goBtn: "खोजें",
+        mapTitle: "इंटरैक्टिव भारत मौसम मानचित्र",
+        layerBase: "मानक मानचित्र",
+        layerRadar: "रडार / बादल",
+        layerWarning: "चेतावनी क्षेत्र",
         viewingMode: "होमपेज प्रोफ़ाइल",
         healthBtn: "स्वास्थ्य (AQI)",
         farmerBtn: "कृषि मौसम (किसान)",
         commuterBtn: "यात्री (दैनिक)",
-        widgetsHeading: "प्राथमिकता-आधारित वैयक्तिकृत लेआउट",
         loading: "आधिकारिक मौसम डेटा लोड हो रहा है...",
         topPriority: "प्राथमिकता #1 (सक्रिय प्रोफ़ाइल)",
         rankPrefix: "क्रमांक #",
@@ -564,13 +642,16 @@
       },
       ta: {
         subhead: "இந்திய வானிலை ஆய்வு மையம் | புவி அறிவியல் அமைச்சகம்",
-        searchPlaceholder: "மாவட்டம் / வானிலை மையம் தேடுங்கள் (எ.கா. சென்னை, புனே)...",
+        searchPlaceholder: "மாவட்டம் / வானிலை மையம் தேடுங்கள்...",
         goBtn: "தேடு",
+        mapTitle: "இந்திய வானிலை வரைபடம்",
+        layerBase: "நிலையான வரைபடம்",
+        layerRadar: "ரேடார் / மேகங்கள்",
+        layerWarning: "எச்சரிக்கை பகுதிகள்",
         viewingMode: "முகப்புப் பக்க சுயவிவரம்",
         healthBtn: "சுகாதாரம் (AQI)",
         farmerBtn: "வேளாண் வானிலை",
         commuterBtn: "பயணிகள்",
-        widgetsHeading: "முன்னுரிமை அடிப்படையிலான தகவல் தொகுப்பு",
         loading: "வானிலை தகவல்கள் பெறப்படுகின்றன...",
         topPriority: "முன்னுரிமை #1 (தேர்ந்தெடுக்கப்பட்டது)",
         rankPrefix: "வரிசை #",
@@ -578,100 +659,65 @@
       }
     };
 
-    function switchLanguage(lang) {
-      activeLang = lang;
-      const t = i18nDict[lang];
-      document.getElementById("txt-subhead").textContent = t.subhead;
-      document.getElementById("station-input").placeholder = t.searchPlaceholder;
-      document.getElementById("btn-fetch").textContent = t.goBtn;
-      document.getElementById("txt-viewing-mode").textContent = t.viewingMode;
-      document.getElementById("lbl-p-health").textContent = t.healthBtn;
-      document.getElementById("lbl-p-farmer").textContent = t.farmerBtn;
-      document.getElementById("lbl-p-commuter").textContent = t.commuterBtn;
-      document.getElementById("txt-widgets-heading").textContent = t.widgetsHeading;
-      executeUpdate();
+    function initMap() {
+      if (leafletMap) return;
+
+      // Center strictly over India (Lat: 20.5937, Lon: 78.9629)
+      leafletMap = L.map('india-map', {
+        zoomControl: true,
+        scrollWheelZoom: false
+      }).setView([20.5937, 78.9629], 5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; India Meteorological Department (IMD) | OpenStreetMap',
+        maxZoom: 18,
+        minZoom: 4
+      }).addTo(leafletMap);
     }
 
-    function selectPersona(persona) {
-      activePersona = persona;
-      document.querySelectorAll(".chip-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.persona === persona);
-      });
-      const names = { health: "Health & Environment", farmer: "Agromet / Farmer", commuter: "Commuter / Travel" };
-      document.getElementById("txt-active-mode-name").textContent = names[persona];
-      executeUpdate();
+    function setMapLayer(layerType) {
+      document.querySelectorAll('.map-btn').forEach(btn => btn.classList.remove('active'));
+
+      if (radarOverlayLayer && leafletMap.hasLayer(radarOverlayLayer)) {
+        leafletMap.removeLayer(radarOverlayLayer);
+      }
+
+      if (layerType === 'base') {
+        document.getElementById('btn-layer-base').classList.add('active');
+      } else if (layerType === 'radar') {
+        document.getElementById('btn-layer-radar').classList.add('active');
+        // Real-time meteorological precipitation tile layer
+        radarOverlayLayer = L.tileLayer('https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
+          opacity: 0.65
+        });
+        radarOverlayLayer.addTo(leafletMap);
+      } else if (layerType === 'warning') {
+        document.getElementById('btn-layer-warning').classList.add('active');
+        // Visual coastal alert circle simulation (e.g. Bay of Bengal Cyclone watch)
+        radarOverlayLayer = L.circle([19.8135, 85.8312], {
+          color: '#d90429',
+          fillColor: '#ef4444',
+          fillOpacity: 0.35,
+          radius: 180000
+        }).bindPopup("<b>IMD RED ALERT ZONE</b><br>Coastal squalls & heavy depression.");
+        radarOverlayLayer.addTo(leafletMap);
+      }
     }
 
-    async function executeUpdate() {
-      const city = document.getElementById("station-input").value.trim() || "Chennai";
-      const deckContainer = document.getElementById("deck-container");
-      const alertAnchor = document.getElementById("severe-alert-anchor");
-      const heroCard = document.getElementById("hero-card");
+    function updateMapMarker(cityName, stateName, temp) {
+      if (!leafletMap) return;
 
-      deckContainer.innerHTML = `<div class="state-message">${i18nDict[activeLang].loading}</div>`;
-      alertAnchor.innerHTML = "";
+      let coords = INDIAN_COORDS[cityName];
+      if (!coords) {
+        // Approximate fallback based on common geocoding or default pan
+        coords = [20.5937, 78.9629];
+      }
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/dashboard?city=${encodeURIComponent(city)}&persona=${encodeURIComponent(activePersona)}`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail || `Server status ${res.status}`);
-        }
+      leafletMap.flyTo(coords, 7, { animate: true, duration: 1.2 });
 
-        const data = await res.json();
+      if (currentMarker) {
+        leafletMap.removeLayer(currentMarker);
+      }
 
-        // 1. Fill IMD Hero Summary Card
-        heroCard.style.display = "flex";
-        document.getElementById("hero-city-name").textContent = data.city_name;
-        document.getElementById("hero-state-name").textContent = `${data.state}, India`;
-        
-        // Extract common primary telemetry for hero ring
-        const commuterW = data.widgets.find(w => w.widget_id === "commuter_card");
-        const healthW = data.widgets.find(w => w.widget_id === "health_card");
-        
-        if (commuterW) {
-          document.getElementById("hero-temp-val").textContent = commuterW.data["Temperature"] || "30°C";
-          document.getElementById("hero-rain").textContent = `Rain Risk: ${commuterW.data["Precipitation Risk"] || "0%"}`;
-        }
-        if (healthW) {
-          document.getElementById("hero-humidity").textContent = `Humidity: ${healthW.data["Humidity"] || "--"}`;
-          document.getElementById("hero-uv").textContent = `UV Index: ${healthW.data["UV Index"] || "--"}`;
-        }
-
-        // 2. Safety Invariant Banner (Permanent Top Container)
-        if (data.active_alerts && data.active_alerts.length > 0) {
-          data.active_alerts.forEach(alert => {
-            const el = document.createElement("div");
-            el.className = "imd-alert-strip";
-            el.innerHTML = `
-              <h3>⚠️ IMD SEVERE WARNING: ${alert.title} [${alert.severity_level}]</h3>
-              <p>${alert.description}</p>
-            `;
-            alertAnchor.appendChild(el);
-          });
-        }
-
-        // 3. Render Ranked Deck
-        deckContainer.innerHTML = "";
-        data.widgets.forEach((widget, index) => {
-          const isTop = index === 0;
-          const card = document.createElement("section");
-          card.className = `deck-card ${isTop ? "top-priority" : ""}`;
-
-          let tiles = "";
-          for (const [k, v] of Object.entries(widget.data)) {
-            tiles += `
-              <div class="meas-box">
-                <div class="meas-label">${k}</div>
-                <div class="meas-val">${v}</div>
-              </div>`;
-          }
-
-          const rankBadgeText = isTop 
-            ? i18nDict[activeLang].topPriority 
-            : `${i18nDict[activeLang].rankPrefix}${index + 1}`;
-
-          card.innerHTML = `
-            <div class="deck-card-header">
-              <div class="card-title-group">
-                <h4>${widget.title}</h4>
+      currentMarker = L.marker(coords).addTo(leafletMap);
+      currentMarker.bindPopup(`<b>${cityName} Station</b><br>
